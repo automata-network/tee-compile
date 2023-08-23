@@ -1,0 +1,20 @@
+name: Software Build Attestation
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    permissions: write-all
+    runs-on: [self-hosted]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Build
+      run: |
+        attestation-build-tool build -output attestation-build-tool.tar -nitro ~/ata-build-go-latest.eif
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: attestation-build-tool.tar

@@ -1,0 +1,11 @@
+{
+	"language": "go",
+	"input": {
+		"cmd": "go build -o /tmp/ ."
+	},
+	"output": {
+		"files": [
+			"attestation-build-tool"
+		]
+	}
+}
