@@ -84,7 +84,6 @@ Thank you for considering contributing to attestable-build-tool!
 * **Raise an Issue**: If you find a bug or wish to suggest a feature, please open an issue first to discuss it. Detail the bug or feature so we understand your intention.  
 * **Pull Requests (PR)**: Before submitting a PR, ensure:  
     * Your contribution successfully builds.
-    * It's linted using `cargo fmt`.
     * It includes tests, if applicable.
 Your efforts help make attestable-build-tool better, and we truly appreciate your support!
 
