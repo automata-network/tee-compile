@@ -1,5 +1,15 @@
 # Attestable Build Tool
 
+## About
+
+In the current technological landscape, there's a glaring absence of mechanisms to verify that an executable file has been compiled from a specific source code. This gap poses significant challenges in terms of security, transparency, and trust, as there is no definitive way to prove the authenticity of the compiled software.
+
+To address this issue, we are introducing a method that involves standardizing the compilation process within an enclave environment. An enclave is a protected, isolated area of execution, where code can be run in confidentiality and integrity, safeguarded from potential tampering or unauthorized access.
+
+## Architecture
+
+![image](https://1440033567-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FtYKuUrKWPlgYjy0suCeT%2Fuploads%2F5z6W0W8hyBeYLHmfKMB1%2Fimage.png?alt=media&token=ac96957d-78ef-4717-991d-ce4093ce912e)
+
 ## Github Runner
 1. Apply for a nitro enclave machine on AWS.
 2. Configure the GitHub runner:  
