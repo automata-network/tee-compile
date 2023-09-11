@@ -1,6 +1,21 @@
 # Attestable Build Tool
 
-## Github Runner
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+## About
+
+In the current technological landscape, there's a glaring absence of mechanisms to verify that an executable file has been compiled from a specific source code. This gap poses significant challenges in terms of security, transparency, and trust, as there is no definitive way to prove the authenticity of the compiled software.
+
+To address this issue, we are introducing a method that involves standardizing the compilation process within an enclave environment. An enclave is a protected, isolated area of execution, where code can be run in confidentiality and integrity, safeguarded from potential tampering or unauthorized access.
+
+## Architecture
+
+![architecture](https://1440033567-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FtYKuUrKWPlgYjy0suCeT%2Fuploads%2F5z6W0W8hyBeYLHmfKMB1%2Fimage.png?alt=media&token=ac96957d-78ef-4717-991d-ce4093ce912e)
+
+
+## Usage
+
+### Github Runner
 1. Apply for a nitro enclave machine on AWS.
 2. Configure the GitHub runner:  
     2.1. Settings → Actions → Runners → New self-hosted runner  
@@ -8,7 +23,7 @@
 3. Download the Software Build Attestation Image.
 4. Download the Attestation Build Tool.
 
-## Github Action
+### Github Action
 
 Create `build_attestation.yml` under the project's `.github/workflow` directory
 
@@ -51,7 +66,27 @@ Create the `build.json` file in the project.
 }
 ```
 
-## Enclave Images
+### Enclave Images
 
 * [rust](https://attestation-build-image.s3.ap-southeast-1.amazonaws.com/ata-build-rust-latest.eif)
 * [go](https://attestation-build-image.s3.ap-southeast-1.amazonaws.com/ata-build-go-latest.eif)
+
+## See also
+
+* [Software Build Attestation](https://docs.ata.network/attestation-module/software-build-attestation)
+* [Reproducible Build](https://docs.ata.network/research/reproducible-build)
+
+## Contributing
+
+Thank you for considering contributing to attestable-build-tool!
+
+**Before You Contribute**:
+* **Raise an Issue**: If you find a bug or wish to suggest a feature, please open an issue first to discuss it. Detail the bug or feature so we understand your intention.  
+* **Pull Requests (PR)**: Before submitting a PR, ensure:  
+    * Your contribution successfully builds.
+    * It includes tests, if applicable.
+Your efforts help make attestable-build-tool better, and we truly appreciate your support!
+
+## License
+
+MIT
