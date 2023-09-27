@@ -27,6 +27,7 @@ func NewVsockLogWriter(url string) *VsockLogWriter {
 func (w *VsockLogWriter) Write(data []byte) (int, error) {
 	resp, err := w.client.Post(w.url, "application/octet-stream", bytes.NewReader(data))
 	if err != nil {
+		logex.Error("write log fail:", err)
 		return 0, logex.Trace(err)
 	}
 	resp.Body.Close()

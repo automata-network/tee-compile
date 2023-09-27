@@ -10,11 +10,12 @@ import (
 )
 
 type AttestationReport struct {
-	GitCommit  string `json:"git_commit,omniempty"`
-	InputHash  string `json:"input_hash,omniempty"`
-	Image      string `json:"image,omniempty"`
-	OutputHash string `json:"output_hash,omniempty"`
-	Nonce      string `json:"nonce,omniempty"`
+	GitCommit  string `json:"git_commit,omitempty"`
+	InputHash  string `json:"input_hash,omitempty"`
+	Image      string `json:"image,omitempty"`
+	OutputHash string `json:"output_hash,omitempty"`
+	Nonce      string `json:"nonce,omitempty"`
+	Mrenclave  string `json:"mrenclave,omitempty"`
 }
 
 func Attestation(report *AttestationReport) ([]byte, error) {

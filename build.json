@@ -5,7 +5,7 @@
 	},
 	"output": {
 		"files": [
-			"attestation-build-tool"
+			"attestable-build-tool"
 		]
 	}
 }

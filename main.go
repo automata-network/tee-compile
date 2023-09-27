@@ -11,6 +11,8 @@ type BuildTool struct {
 	Build  *BuildToolBuild  `flagly:"handler"`
 	Worker *BuildToolWorker `flagly:"handler"`
 	Vendor *BuildToolVendor `flagly:"handler"`
+	SGX    *BuildToolSGX    `flagly:"handler"`
+	Report *BuildToolReport `flagly:"handler"`
 }
 
 func main() {

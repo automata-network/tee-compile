@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,8 +27,10 @@ type BuildToolBuild struct {
 	Listen string `default:"vsock://:12346"`
 	Vendor string
 	Nitro  string
+	Mem    string `default:"12288"`
 	Output string
 	Nonce  string
+	Debug  bool
 
 	Server *http.Server `flagly:"-"`
 }
@@ -58,7 +62,7 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 		if err := misc.Exec(nil, "docker", "run", "--rm",
 			"-v", fmt.Sprintf("%v:/tmp/vendor", vendorDir),
 			"-v", fmt.Sprintf("%v:/workspace/code", cwd),
-			b.Vendor, "/workspace/attestation-build-tool", "vendor", "-dir", "/workspace/code",
+			b.Vendor, "/workspace/attestable-build-tool", "vendor", "-dir", "/workspace/code",
 		); err != nil {
 			return logex.Trace(err)
 		}
@@ -93,7 +97,7 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 	logex.Info("package tar file to:", tarFd.Name())
 	defer tarFd.Close()
 
-	targetFile, err := os.OpenFile(b.Output, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0755)
+	targetFile, err := os.OpenFile(b.Output+".tar", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0755)
 	if err != nil {
 		return logex.Trace(err)
 	}
@@ -104,7 +108,7 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 	var endpoint string
 	if b.Nitro != "" {
 		misc.Exec(nil, "nitro-cli", "terminate-enclave", "--all")
-		cmd = misc.RunNitroEnclave(b.Nitro)
+		cmd = misc.RunNitroEnclave(b.Nitro, b.Mem, b.Debug)
 		if err := cmd.Start(); err != nil {
 			return logex.Trace(err)
 		}
@@ -194,13 +198,28 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 			logex.Error("decode report fail:", err)
 		}
 
-		res, err := nitrite.Verify(reportBytes, nitrite.VerifyOptions{
+		report, err := nitrite.Verify(reportBytes, nitrite.VerifyOptions{
 			CurrentTime: time.Now(),
 		})
 		if err != nil {
 			return logex.Trace(err)
 		}
-		logex.Pretty(res)
+
+		if err := os.WriteFile(b.Output+".report", reportBytes, 0666); err != nil {
+			logex.Error(err)
+		}
+		dst := bytes.NewBuffer(nil)
+		dst.WriteString("## Attestation Report\n")
+		dst.WriteString("**PCR0**: \n `0x" + hex.EncodeToString(report.Document.PCRs[0]) + "`\n")
+		dst.WriteString("\n**Report User Data**:\n")
+		dst.WriteString("```\n")
+		if err := json.Indent(dst, report.Document.UserData, "", "\t"); err != nil {
+			logex.Error(err)
+		}
+		dst.WriteString("\n```\n")
+		if err := os.WriteFile(b.Output+".txt", dst.Bytes(), 0666); err != nil {
+			logex.Error(err)
+		}
 	}
 	logex.Info("save file to:", targetFile.Name())
 
@@ -211,13 +230,13 @@ func (b *BuildToolBuild) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	switch req.URL.Path {
 	case "/log":
-		data, err := ioutil.ReadAll(req.Body)
+		data, err := io.ReadAll(req.Body)
 		if err != nil {
 			w.WriteHeader(400)
 			fmt.Fprint(w, err.Error())
 			return
 		}
-		fmt.Printf("%s", data)
+		fmt.Printf("enclave: %s", data)
 	}
 }
 

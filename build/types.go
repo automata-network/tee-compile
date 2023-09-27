@@ -20,7 +20,8 @@ type ManifestInput struct {
 }
 
 type ManifestOutput struct {
-	Files []string `json:"files"`
+	SgxSignedSo string   `json:"sgx_signed_so"`
+	Files       []string `json:"files"`
 }
 
 func NewManifest(file string) (*Manifest, error) {

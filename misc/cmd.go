@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/chzyer/logex"
 )
@@ -18,11 +19,16 @@ type LogOutput struct {
 
 func Exec(out *LogOutput, name string, args ...string) error {
 	if out == nil {
-		out = &LogOutput{
-			Stdout: os.Stdout,
-			Stderr: os.Stderr,
-		}
+		out = &LogOutput{}
 	}
+	if out.Stdout == nil {
+		out.Stdout = os.Stdout
+	}
+	if out.Stderr == nil {
+		out.Stderr = os.Stderr
+	}
+	fmt.Fprintf(out.Stdout, "exec %q\n", strings.Join(append([]string{name}, args...), " "))
+
 	cmd := exec.Command(name, args...)
 	cmd.Stderr = out.Stderr
 	cmd.Stdin = os.Stdin
@@ -74,15 +80,19 @@ func InDir(dir string, run func() error) error {
 	return nil
 }
 
-func RunNitroEnclave(path string) *exec.Cmd {
+func RunNitroEnclave(path string, mem string, debug bool) *exec.Cmd {
 	args := []string{
 		"run-enclave",
 		"--cpu-count", "2",
-		"--memory", "12288",
+		"--memory", mem,
 		"--enclave-cid", "11",
 		"--eif-path", path,
-		// "--debug-mode",
-		// "--attach-console",
+	}
+	if debug {
+		args = append(args,
+			"--debug-mode",
+			"--attach-console",
+		)
 	}
 	cmd := exec.Command("nitro-cli", args...)
 	cmd.Stderr = os.Stderr

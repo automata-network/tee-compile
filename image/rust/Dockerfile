@@ -2,10 +2,7 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update
-
-RUN apt install -y build-essential curl git git-core libssl-dev 
-RUN apt install -y dpkg-dev autoconf wget ocamlbuild ocaml file pkg-config libtool
+RUN apt update && apt install -y build-essential curl git git-core libssl-dev dpkg-dev autoconf wget ocamlbuild ocaml file pkg-config libtool clang
 # RUN apt install -y software-properties-common
 
 # RUN apt install -y unzip debhelper  expect flex gdb gnupg kmod libboost-system-dev libboost-thread-dev libcurl4-openssl-dev libiptcdata0-dev libjsoncpp-dev liblog4cpp5-dev libprotobuf-dev libtool libxml2-dev ocaml ocamlbuild pkg-config protobuf-compiler python texinfo uuid-dev vim wget software-properties-common
@@ -13,6 +10,10 @@ RUN apt install -y dpkg-dev autoconf wget ocamlbuild ocaml file pkg-config libto
 RUN rm -rf /var/lib/apt/lists/*
 
 ENV rust_toolchain nightly-2021-11-01
+ENV CODENAME                focal
+ENV VERSION                 2.19.100.3-focal1
+ENV DCAP_VERSION            1.16.100.2-focal1
+ENV AZ_DCAP_CLIENT_VERSION  1.12.0
 
 RUN cd /root && \
     curl 'https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init' --output /root/rustup-init && \
@@ -20,10 +21,8 @@ RUN cd /root && \
     echo '1' | /root/rustup-init --default-toolchain ${rust_toolchain} --profile minimal && \
     echo 'source /root/.cargo/env' >> /root/.bashrc && \
     rm /root/rustup-init && rm -rf /root/.cargo/registry && rm -rf /root/.cargo/git
-#/root/.cargo/bin/rustup component add rust-src rls rust-analysis clippy rustfmt && \
-#/root/.cargo/bin/cargo install xargo && \
 
-ENV SDK_URL="https://download.01.org/intel-sgx/sgx-linux/2.15.1/distro/ubuntu20.04-server/sgx_linux_x64_sdk_2.15.101.1.bin"
+ENV SDK_URL="https://download.01.org/intel-sgx/sgx-linux/2.19/distro/ubuntu20.04-server/sgx_linux_x64_sdk_2.19.100.3.bin"
 RUN cd /root && \
     curl -o sdk.sh $SDK_URL && \
     chmod a+x /root/sdk.sh && \
@@ -32,13 +31,13 @@ RUN cd /root && \
     cd /root && \
     rm ./sdk.sh
 
-ENV CODENAME        focal
-ENV VERSION         2.15.101.1-focal1
-ENV DCAP_VERSION    1.12.101.1-focal1
-
-RUN curl -fsSL https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add - && \
+RUN curl -fsSL  https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add - && \
     echo "deb https://download.01.org/intel-sgx/sgx_repo/ubuntu $CODENAME main" >> /etc/apt/sources.list && \
-    # add-apt-repository "deb https://download.01.org/intel-sgx/sgx_repo/ubuntu $CODENAME main" && \
+    echo "deb [arch=amd64] https://packages.microsoft.com/ubuntu/20.04/prod focal main" | tee /etc/apt/sources.list.d/msprod.list && \
+    wget -qO - https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+    wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    rm packages-microsoft-prod.deb && \
     apt-get update && \
     apt-get install -y \
         libsgx-headers=$VERSION \
@@ -61,16 +60,22 @@ RUN curl -fsSL https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.k
         libsgx-uae-service=$VERSION \
         libsgx-urts=$VERSION \
         sgx-aesm-service=$VERSION \
-	    libsgx-ae-qe3=$DCAP_VERSION \
+        libsgx-dcap-ql=$DCAP_VERSION \
+        libsgx-dcap-ql-dev=$DCAP_VERSION \
+        libsgx-dcap-quote-verify=$DCAP_VERSION \
+        libsgx-dcap-quote-verify-dev=$DCAP_VERSION \
+        libsgx-dcap-default-qpl=$DCAP_VERSION \
+        libsgx-dcap-default-qpl-dev=$DCAP_VERSION \
+        libsgx-ae-qve=$DCAP_VERSION \
+        libsgx-ae-qe3=$DCAP_VERSION \
         libsgx-pce-logic=$DCAP_VERSION \
         libsgx-qe3-logic=$DCAP_VERSION \
         libsgx-ra-network=$DCAP_VERSION \
         libsgx-ra-uefi=$DCAP_VERSION && \
+    apt install -y az-dcap-client=$AZ_DCAP_CLIENT_VERSION && \
     mkdir /var/run/aesmd && \
     rm -rf /var/lib/apt/lists/* && \
-    rm -rf /var/cache/apt/archives/* 
-
-
+    rm -rf /var/cache/apt/archives/*
 
 ENV LD_LIBRARY_PATH=/usr/lib:/usr/local/lib
 ENV LD_RUN_PATH=/usr/lib:/usr/local/lib
@@ -82,6 +87,6 @@ ENV PKG_CONFIG_PATH='/opt/sgxsdk/pkgconfig'
 
 
 WORKDIR /workspace
-COPY attestation-build-tool /workspace
+COPY attestable-build-tool /workspace
 
-CMD ["bash", "-c", "/workspace/attestation-build-tool worker -listen vsock://:12345 -dir /workspace"]
+CMD ["bash", "-c", "/workspace/attestable-build-tool worker -listen vsock://:12345 -dir /workspace"]

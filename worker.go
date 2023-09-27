@@ -158,6 +158,7 @@ func (b *BuildToolWorker) Build(data io.Reader, nonce string) (*BuildResult, err
 		Nonce:      nonce,
 		InputHash:  fmt.Sprintf("0x%x", builder.InputResult.Root),
 		OutputHash: fmt.Sprintf("0x%x", builder.OutputResult.Root),
+		Mrenclave:  builder.OutputMrenclave,
 	})
 	if err != nil {
 		return nil, logex.Trace(err)
@@ -179,6 +180,7 @@ func (b *BuildToolWorker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	switch req.URL.Path {
 	case "/ping":
 		url := fmt.Sprintf("http://%v/log", query.Get("host"))
+		logex.Info("set logger:", url)
 		b.InitLogger(misc.NewVsockLogWriter(url))
 	case "/build":
 		report, err := b.Build(req.Body, query.Get("nonce"))
@@ -188,7 +190,6 @@ func (b *BuildToolWorker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		} else {
 			w.Header().Set("Report", base64.URLEncoding.EncodeToString(report.Report))
 			w.WriteHeader(200)
-			b.logger.Info("write report: %s", report.Report)
 			io.Copy(w, report.Body)
 			report.Body.Close()
 		}

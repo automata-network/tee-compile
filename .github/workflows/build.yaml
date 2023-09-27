@@ -13,8 +13,8 @@ jobs:
       uses: actions/checkout@v2
     - name: Build
       run: |
-        attestation-build-tool build -output attestation-build-tool.tar -nitro ~/ata-build-go-latest.eif
+        attestable-build-tool build -output attestable-build-tool.tar -nitro ~/ata-build-go-latest.eif
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
-        files: attestation-build-tool.tar
+        files: attestable-build-tool.tar

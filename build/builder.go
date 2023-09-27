@@ -1,6 +1,7 @@
 package build
 
 import (
+	"encoding/hex"
 	"os"
 
 	"github.com/automata-network/attestable-build-tool/misc"
@@ -8,12 +9,13 @@ import (
 )
 
 type Builder struct {
-	Manifest     *Manifest
-	Nonce        string
-	GitInfo      *misc.GitInfo
-	OutputResult *misc.MerkleTreeResult
-	InputResult  *misc.MerkleTreeResult
-	logOutput    *misc.LogOutput
+	Manifest        *Manifest
+	Nonce           string
+	GitInfo         *misc.GitInfo
+	OutputResult    *misc.MerkleTreeResult
+	InputResult     *misc.MerkleTreeResult
+	OutputMrenclave string
+	logOutput       *misc.LogOutput
 }
 
 func NewBuilder(manifest *Manifest, nonce string, logOutput *misc.LogOutput) *Builder {
@@ -71,6 +73,14 @@ func (b *Builder) Build() error {
 	outputResult, err := misc.FilesMerkleTree(b.Manifest.Output.Files, 10, nil)
 	if err != nil {
 		return logex.Trace(err)
+	}
+
+	if b.Manifest.Output.SgxSignedSo != "" {
+		mrenclave, err := misc.GetMrEnclave(b.Manifest.Output.SgxSignedSo)
+		if err != nil {
+			return logex.Trace(err)
+		}
+		b.OutputMrenclave = "0x" + hex.EncodeToString(mrenclave)
 	}
 
 	b.GitInfo = gitInfo
