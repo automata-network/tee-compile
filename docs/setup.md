@@ -10,6 +10,8 @@ Download the golang [here](https://go.dev/dl/)
 
 ## Build Image
 
+Please ensure sufficient memory is available before building (recommended: 4GB).
+
 ```
 # clone this repo
 > cd image
@@ -24,6 +26,8 @@ Download the golang [here](https://go.dev/dl/)
 
 ```
 > sudo vim /etc/nitro_enclaves/allocator.yaml
+memory_mib: 12288
+cpu_count: 2
 > sudo systemctl restart nitro-enclaves-allocator
 ```
 
