@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -30,6 +31,8 @@ type BuildToolBuild struct {
 	Vendor string
 	Nitro  string
 	Mem    string `default:"12288"`
+	Cid    int
+	Cpu    int `default:"2"`
 	Output string
 	Nonce  string
 	Debug  bool
@@ -51,6 +54,7 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 	if err != nil {
 		return logex.Trace(err)
 	}
+	cid := uint32(b.Cid)
 
 	manifest, err := build.NewManifest("build.json")
 	if err != nil {
@@ -72,6 +76,15 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 		if b.Output == "/" {
 			logex.Fatal("-output is required")
 		}
+	}
+	if cid == 0 {
+		randCid := make([]byte, 4)
+		rand.Read(randCid)
+		cid = binary.LittleEndian.Uint32(randCid)
+		if cid == 0 {
+			logex.Fatal("fail to generate cid")
+		}
+		cid |= 1 << 31
 	}
 
 	var vendorTars [][2]string
@@ -132,12 +145,12 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 	var endpoint string
 	if b.Nitro != "" {
 		misc.Exec(nil, "nitro-cli", "terminate-enclave", "--all")
-		cmd = misc.RunNitroEnclave(b.Nitro, b.Mem, b.Debug)
+		cmd = misc.RunNitroEnclave(b.Nitro, b.Mem, uint(b.Cpu), cid, b.Debug)
 		if err := cmd.Start(); err != nil {
 			return logex.Trace(err)
 		}
 		client = misc.NewVsockClient(nil)
-		endpoint = "http://11:12345"
+		endpoint = fmt.Sprintf("http://%v:12345", cid)
 	} else {
 		// local mode
 		cmd = exec.Command(os.Args[0], "worker", "-listen", "tcp://localhost:12345")

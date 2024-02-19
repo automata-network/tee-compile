@@ -80,12 +80,12 @@ func InDir(dir string, run func() error) error {
 	return nil
 }
 
-func RunNitroEnclave(path string, mem string, debug bool) *exec.Cmd {
+func RunNitroEnclave(path string, mem string, cpu uint, cid uint32, debug bool) *exec.Cmd {
 	args := []string{
 		"run-enclave",
-		"--cpu-count", "2",
+		"--cpu-count", fmt.Sprint(cpu),
 		"--memory", mem,
-		"--enclave-cid", "11",
+		"--enclave-cid", fmt.Sprint(cid),
 		"--eif-path", path,
 	}
 	if debug {
