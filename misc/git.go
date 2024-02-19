@@ -3,6 +3,7 @@ package misc
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/chzyer/logex"
 )
@@ -12,10 +13,21 @@ type GitInfo struct {
 }
 
 func GetGitInfo(dir string) (*GitInfo, error) {
-	fp := filepath.Join(dir, ".git", "HEAD")
+	var gitInfo GitInfo
+	fp := filepath.Join(dir, ".git", "packed-refs")
 	data, err := os.ReadFile(fp)
 	if err != nil {
-		return nil, logex.Trace(err)
+		fp := filepath.Join(dir, ".git", "HEAD")
+		data, err := os.ReadFile(fp)
+		if err != nil {
+			return nil, logex.Trace(err)
+		}
+		gitInfo.Commit = string(data)
+	} else {
+		lines := strings.Split(string(data), "\n")
+		lines = strings.Split(lines[1], " ")
+		gitInfo.Commit = lines[0]
 	}
-	return &GitInfo{Commit: string(data)}, nil
+	gitInfo.Commit = strings.TrimSpace(gitInfo.Commit)
+	return &gitInfo, nil
 }

@@ -14,8 +14,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/automata-network/attestable-build-tool/build"
 	"github.com/automata-network/attestable-build-tool/misc"
 	"github.com/chzyer/logex"
 	"github.com/hf/nitrite"
@@ -50,9 +52,31 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 		return logex.Trace(err)
 	}
 
+	manifest, err := build.NewManifest("build.json")
+	if err != nil {
+		return logex.Trace(err, "build.json is required")
+	}
+
+	if b.Vendor == "" {
+		b.Vendor = fmt.Sprintf("ata-build-%v", strings.ToLower(manifest.Language))
+	}
+	if b.Nitro == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			panic(err)
+		}
+		b.Nitro = filepath.Join(home, fmt.Sprintf("ata-build-%v-latest.eif", strings.ToLower(manifest.Language)))
+	}
+	if b.Output == "" {
+		b.Output = filepath.Base(cwd)
+		if b.Output == "/" {
+			logex.Fatal("-output is required")
+		}
+	}
+
 	var vendorTars [][2]string
 
-	if b.Vendor != "" {
+	if manifest.Input.Vendor != "" {
 		vendorDir, err := os.MkdirTemp("", "vendor*")
 		if err != nil {
 			return logex.Trace(err)
@@ -62,7 +86,7 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 		if err := misc.Exec(nil, "docker", "run", "--rm",
 			"-v", fmt.Sprintf("%v:/tmp/vendor", vendorDir),
 			"-v", fmt.Sprintf("%v:/workspace/code", cwd),
-			b.Vendor, "/workspace/attestable-build-tool", "vendor", "-dir", "/workspace/code",
+			b.Vendor, "attestable-build-tool", "vendor", "-dir", "/workspace/code",
 		); err != nil {
 			return logex.Trace(err)
 		}
@@ -73,7 +97,7 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 		for _, vendor := range dir {
 			vendorTars = append(vendorTars, [2]string{
 				filepath.Join(vendorDir, vendor.Name()),
-				"/root",
+				"/usr/local/",
 			})
 		}
 	}

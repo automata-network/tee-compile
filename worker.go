@@ -154,11 +154,14 @@ func (b *BuildToolWorker) Build(data io.Reader, nonce string) (*BuildResult, err
 		return nil, logex.Trace(err)
 	}
 
+	extraHash, _ := builder.Manifest.Output.ExtraHash.Get()
 	reportData, err := misc.Attestation(&misc.AttestationReport{
 		Nonce:      nonce,
+		GitCommit:  builder.GitInfo.Commit,
 		InputHash:  fmt.Sprintf("0x%x", builder.InputResult.Root),
 		OutputHash: fmt.Sprintf("0x%x", builder.OutputResult.Root),
 		Mrenclave:  builder.OutputMrenclave,
+		ExtraHash:  extraHash,
 	})
 	if err != nil {
 		return nil, logex.Trace(err)

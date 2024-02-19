@@ -25,7 +25,7 @@ To address this issue, we are introducing a method that involves standardizing t
 
 ### Github Action
 
-Create `build_attestation.yml` under the project's `.github/workflow` directory
+Create `reproducible-build.yml` under the project's `.github/workflow` directory
 
 ```
 name: Software Build Attestation
@@ -70,6 +70,25 @@ Create the `build.json` file in the project.
 
 * [rust](https://attestation-build-image.s3.ap-southeast-1.amazonaws.com/ata-build-rust-latest.eif)
 * [go](https://attestation-build-image.s3.ap-southeast-1.amazonaws.com/ata-build-go-latest.eif)
+
+## Build Image
+
+### Requirement
+
+* Go
+  * download golang [here](https://go.dev/dl/)
+* Nitro Cli
+
+### Usage
+
+```
+> cd image
+> LANG=phala ./build-image.sh
+* Build a docker image with the tag named: `ata-build-phala`
+* Build a nitro enclave eif to `~/ata-build-phala-latest.eif`
+
+```
+
 
 ## See also
 

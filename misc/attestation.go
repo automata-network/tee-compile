@@ -16,6 +16,7 @@ type AttestationReport struct {
 	OutputHash string `json:"output_hash,omitempty"`
 	Nonce      string `json:"nonce,omitempty"`
 	Mrenclave  string `json:"mrenclave,omitempty"`
+	ExtraHash  string `json:"extra_hash,omitempty"`
 }
 
 func Attestation(report *AttestationReport) ([]byte, error) {
