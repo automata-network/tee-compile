@@ -191,7 +191,14 @@ RERUN:
 			code := proc.ExitCode()
 			switch code {
 			case 39:
-				if strings.Contains(proc.ErrorMsg(), "[ E36 ] Enclave boot failure") {
+				errorMsg := proc.ErrorMsg()
+				if strings.Contains(errorMsg, "[ E36 ] Enclave boot failure. Such error appears when attempting to receive the `ready` signal from a freshly booted enclave.") {
+					logex.Info("[ E36 ] Resource Busy, wait 10s and retry")
+					time.Sleep(10 * time.Second)
+					goto RERUN
+				}
+				if strings.Contains(errorMsg, "[ E29 ] Ioctl failure. Such error is used as a general ioctl error and appears whenever an ioctl fails. In this case, the error backtrace provides detailed information on what specifically failed during the ioctl.") {
+					logex.Info("[ E29 ] Resource Busy, wait 10s and retry")
 					time.Sleep(10 * time.Second)
 					goto RERUN
 				}
