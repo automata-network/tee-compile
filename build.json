@@ -1,7 +1,7 @@
 {
 	"language": "go",
 	"input": {
-		"cmd": "go build -o /tmp/ ."
+		"cmd": "go build ."
 	},
 	"output": {
 		"files": [

@@ -10,11 +10,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,7 +29,7 @@ import (
 
 type BuildToolBuild struct {
 	Dir    string `default:"."`
-	Listen string `default:"vsock://:12346"`
+	Listen string `default:"vsock://:0"`
 	Vendor string
 	Nitro  string
 	Mem    string `default:"12288"`
@@ -87,6 +89,17 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 		cid |= 1 << 31
 	}
 
+	listener, runServerWait, err := b.RunServer()
+	if err != nil {
+		logex.Fatal(err)
+	}
+
+	go func() {
+		if err := runServerWait(); err != nil {
+			logex.Fatal(err)
+		}
+	}()
+
 	var vendorTars [][2]string
 
 	if manifest.Input.Vendor != "" {
@@ -144,7 +157,7 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 	var client *http.Client
 	var endpoint string
 	if b.Nitro != "" {
-		misc.Exec(nil, "nitro-cli", "terminate-enclave", "--all")
+		// misc.Exec(nil, "nitro-cli", "terminate-enclave", "--all")
 		cmd = misc.RunNitroEnclave(b.Nitro, b.Mem, uint(b.Cpu), cid, b.Debug)
 		if err := cmd.Start(); err != nil {
 			return logex.Trace(err)
@@ -164,20 +177,7 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 		endpoint = "http://localhost:12345"
 	}
 
-	go func() {
-		wait, err := b.RunServer()
-		if err != nil {
-			logex.Fatal(err)
-		}
-		if err := wait(); err != nil {
-			logex.Fatal(err)
-		}
-	}()
-
-	uri, err := url.Parse(b.Listen)
-	if err != nil {
-		return logex.Trace(err)
-	}
+	vsockPort, _ := strconv.Atoi(strings.Split(listener.Addr().String(), ":")[1])
 	vsockId, err := vsock.ContextID()
 	if err != nil {
 		return logex.Trace(err)
@@ -185,7 +185,7 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 
 	for {
 		_, err := client.Get(endpoint + "/ping?" + url.Values{
-			"host": {fmt.Sprintf("%v:%v", vsockId, uri.Port())},
+			"host": {fmt.Sprintf("%v:%v", vsockId, vsockPort)},
 		}.Encode())
 		if err != nil {
 			logex.Errorf("connecting to the enclave... retry in 5secs")
@@ -277,14 +277,14 @@ func (b *BuildToolBuild) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (b *BuildToolBuild) RunServer() (func() error, error) {
+func (b *BuildToolBuild) RunServer() (net.Listener, func() error, error) {
 	uri, err := url.Parse(b.Listen)
 	if err != nil {
-		return nil, logex.Trace(err)
+		return nil, nil, logex.Trace(err)
 	}
 	listener, err := misc.Listen(uri)
 	if err != nil {
-		return nil, logex.Trace(err)
+		return nil, nil, logex.Trace(err)
 	}
 
 	b.Server = &http.Server{
@@ -292,7 +292,7 @@ func (b *BuildToolBuild) RunServer() (func() error, error) {
 		Handler: b,
 	}
 
-	return func() error {
+	return listener, func() error {
 		defer listener.Close()
 		if err := b.Server.Serve(listener); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
