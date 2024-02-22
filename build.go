@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
@@ -14,7 +15,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -153,46 +153,70 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 	}
 	defer targetFile.Close()
 
-	var cmd *exec.Cmd
+	vsockPort, _ := strconv.Atoi(strings.Split(listener.Addr().String(), ":")[1])
+	vsockId, err := vsock.ContextID()
+	if err != nil {
+		return logex.Trace(err)
+	}
+	timer := time.NewTimer(1 * time.Second)
+
+RERUN:
+	var proc *misc.Process
 	var client *http.Client
 	var endpoint string
 	if b.Nitro != "" {
-		// misc.Exec(nil, "nitro-cli", "terminate-enclave", "--all")
-		cmd = misc.RunNitroEnclave(b.Nitro, b.Mem, uint(b.Cpu), cid, b.Debug)
-		if err := cmd.Start(); err != nil {
+		proc, err = misc.RunNitroEnclave(b.Nitro, b.Mem, uint(b.Cpu), cid, b.Debug)
+		if err != nil {
 			return logex.Trace(err)
 		}
 		client = misc.NewVsockClient(nil)
 		endpoint = fmt.Sprintf("http://%v:12345", cid)
 	} else {
 		// local mode
-		cmd = exec.Command(os.Args[0], "worker", "-listen", "tcp://localhost:12345")
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		if err := cmd.Start(); err != nil {
+		proc = misc.NewProcess(context.TODO(), os.Args[0], "worker", "-listen", "tcp://localhost:12345")
+		if err := proc.Start(); err != nil {
 			return logex.Trace(err)
 		}
 		client = http.DefaultClient
 		endpoint = "http://localhost:12345"
 	}
 
-	vsockPort, _ := strconv.Atoi(strings.Split(listener.Addr().String(), ":")[1])
-	vsockId, err := vsock.ContextID()
-	if err != nil {
-		return logex.Trace(err)
-	}
-
 	for {
-		_, err := client.Get(endpoint + "/ping?" + url.Values{
-			"host": {fmt.Sprintf("%v:%v", vsockId, vsockPort)},
-		}.Encode())
-		if err != nil {
-			logex.Errorf("connecting to the enclave... retry in 5secs")
-			time.Sleep(5 * time.Second)
-			continue
+		processPing := false
+		select {
+		case <-timer.C:
+			processPing = true
+		case <-proc.Done():
+			err = proc.Wait()
+			code := proc.ExitCode()
+			switch code {
+			case 39:
+				if strings.Contains(proc.ErrorMsg(), "[ E36 ] Enclave boot failure") {
+					time.Sleep(10 * time.Second)
+					goto RERUN
+				}
+				return logex.NewErrorf("executing build task failed: %v", err)
+			default:
+				<-timer.C
+				processPing = true
+			}
 		}
-		break
+
+		if processPing {
+			query := url.Values{
+				"host": {fmt.Sprintf("%v:%v", vsockId, vsockPort)},
+			}
+			if !b.Debug {
+				query.Set("logger", "1")
+			}
+			_, err := client.Get(endpoint + "/ping?" + query.Encode())
+			if err != nil {
+				logex.Info("connecting to the enclave...")
+				timer.Reset(5 * time.Second)
+				continue
+			}
+			break
+		}
 	}
 
 	for _, tf := range vendorTars {
@@ -218,7 +242,7 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 		return logex.Trace(err)
 	}
 
-	defer cmd.Wait()
+	defer proc.Wait()
 	defer response.Body.Close()
 	if err := checkResponseError(response); err != nil {
 		return logex.Trace(err)

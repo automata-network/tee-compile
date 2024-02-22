@@ -28,6 +28,8 @@ type BuildToolWorker struct {
 func (b *BuildToolWorker) InitLogger(w io.Writer) {
 	if w == nil {
 		b.Output = &misc.LogOutput{Stdout: os.Stdout, Stderr: os.Stderr}
+	} else {
+		b.Output = &misc.LogOutput{Stdout: w, Stderr: w}
 	}
 	b.logger = logex.NewLoggerEx(b.Output.Stdout)
 }
@@ -183,8 +185,9 @@ func (b *BuildToolWorker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	switch req.URL.Path {
 	case "/ping":
 		url := fmt.Sprintf("http://%v/log", query.Get("host"))
-		logex.Info("set logger:", url)
-		b.InitLogger(misc.NewVsockLogWriter(url))
+		if query.Get("logger") != "" {
+			b.InitLogger(misc.NewVsockLogWriter(url))
+		}
 	case "/build":
 		report, err := b.Build(req.Body, query.Get("nonce"))
 		if err != nil {
