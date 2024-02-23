@@ -3,6 +3,9 @@
 if [[ "$LANG" == "" ]]; then
     export LANG=rust
 fi
+if [[ "$NITRO_DIR" == "" ]]; then
+    export NITRO_DIR=$HOME
+fi
 
 function build_tool() {
     `cd ../ && CGO_ENABLED=0 go build -o image/ .`
@@ -15,8 +18,8 @@ function build_docker() {
 }
 
 function build_enclave() {
-    nitro-cli build-enclave --docker-uri ata-build-$LANG:latest --output-file ~/ata-build-$LANG-latest.eif
-    echo "* Build a nitro enclave eif to ~/ata-build-$LANG-latest.eif"
+    nitro-cli build-enclave --docker-uri ata-build-$LANG:latest --output-file $NITRO_DIR/ata-build-$LANG-latest.eif
+    echo "* Build a nitro enclave eif to $NITRO_DIR/ata-build-$LANG-latest.eif"
 }
 
 function deploy() {

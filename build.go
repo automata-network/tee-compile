@@ -29,16 +29,17 @@ import (
 )
 
 type BuildToolBuild struct {
-	Dir    string `default:"."`
-	Listen string `default:"vsock://:0"`
-	Vendor string
-	Nitro  string
-	Mem    int `default:"0"`
-	Cid    int
-	Cpu    int `default:"2"`
-	Output string
-	Nonce  string
-	Debug  bool
+	Dir      string `default:"."`
+	Listen   string `default:"vsock://:0"`
+	Vendor   string
+	NitroDir string `name:"nitro-dir"`
+	Nitro    string
+	Mem      int `default:"0"`
+	Cid      int
+	Cpu      int `default:"2"`
+	Output   string
+	Nonce    string
+	Debug    bool
 
 	Server *http.Server `flagly:"-"`
 }
@@ -63,16 +64,22 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 	if err != nil {
 		return logex.Trace(err, "build.json is required")
 	}
+	if b.NitroDir == "" {
+		b.NitroDir = os.Getenv("NITRO_DIR")
+		if b.NitroDir == "" {
+			home, err := os.UserHomeDir()
+			if err != nil {
+				panic(err)
+			}
+			b.NitroDir = home
+		}
+	}
 
 	if b.Vendor == "" {
 		b.Vendor = fmt.Sprintf("ata-build-%v", strings.ToLower(manifest.Language))
 	}
 	if b.Nitro == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			panic(err)
-		}
-		b.Nitro = filepath.Join(home, fmt.Sprintf("ata-build-%v-latest.eif", strings.ToLower(manifest.Language)))
+		b.Nitro = filepath.Join(b.NitroDir, fmt.Sprintf("ata-build-%v-latest.eif", strings.ToLower(manifest.Language)))
 	}
 	if b.Mem == 0 {
 		stat, err := os.Stat(b.Nitro)
