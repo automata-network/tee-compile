@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/url"
@@ -32,7 +33,7 @@ type BuildToolBuild struct {
 	Listen string `default:"vsock://:0"`
 	Vendor string
 	Nitro  string
-	Mem    string `default:"12288"`
+	Mem    int `default:"0"`
 	Cid    int
 	Cpu    int `default:"2"`
 	Output string
@@ -72,6 +73,13 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 			panic(err)
 		}
 		b.Nitro = filepath.Join(home, fmt.Sprintf("ata-build-%v-latest.eif", strings.ToLower(manifest.Language)))
+	}
+	if b.Mem == 0 {
+		stat, err := os.Stat(b.Nitro)
+		if err != nil {
+			panic(err)
+		}
+		b.Mem = int(math.Ceil(float64(stat.Size())/1024/1024)) * 4
 	}
 	if b.Output == "" {
 		b.Output = filepath.Base(cwd)
@@ -165,7 +173,7 @@ RERUN:
 	var client *http.Client
 	var endpoint string
 	if b.Nitro != "" {
-		proc, err = misc.RunNitroEnclave(b.Nitro, b.Mem, uint(b.Cpu), cid, b.Debug)
+		proc, err = misc.RunNitroEnclave(b.Nitro, uint(b.Mem), uint(b.Cpu), cid, b.Debug)
 		if err != nil {
 			return logex.Trace(err)
 		}
@@ -304,7 +312,7 @@ func (b *BuildToolBuild) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			fmt.Fprint(w, err.Error())
 			return
 		}
-		fmt.Printf("enclave: %s", data)
+		fmt.Printf("%s", data)
 	}
 }
 

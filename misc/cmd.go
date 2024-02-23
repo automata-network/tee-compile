@@ -82,11 +82,11 @@ func InDir(dir string, run func() error) error {
 	return nil
 }
 
-func RunNitroEnclave(path string, mem string, cpu uint, cid uint32, debug bool) (*Process, error) {
+func RunNitroEnclave(path string, mem uint, cpu uint, cid uint32, debug bool) (*Process, error) {
 	args := []string{
 		"run-enclave",
 		"--cpu-count", fmt.Sprint(cpu),
-		"--memory", mem,
+		"--memory", fmt.Sprint(mem),
 		"--enclave-cid", fmt.Sprint(cid),
 		"--eif-path", path,
 	}
@@ -120,7 +120,7 @@ func NewProcess(ctx context.Context, name string, args ...string) *Process {
 
 	cmd.Stderr = io.MultiWriter(os.Stderr, errorMsg)
 	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
+	cmd.Stdout = io.MultiWriter(os.Stdout, errorMsg)
 	return &Process{
 		ctx:       ctx,
 		cmd:       cmd,
@@ -204,7 +204,9 @@ func (f *FixedBuffer) Available() int {
 
 func (f *FixedBuffer) Write(data []byte) (int, error) {
 	n := len(data)
-	data = data[:f.Available()]
+	if f.Available() < len(data) {
+		data = data[:f.Available()]
+	}
 	f.data = append(f.data, data...)
 	return n, nil
 }
