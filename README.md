@@ -1,6 +1,6 @@
 # Attestable Build Tool
 
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache-green.svg)](LICENSE)
 
 ## About
 
