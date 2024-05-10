@@ -6,7 +6,7 @@ WORKDIR /workspace
 COPY . /workspace
 
 
-COPY attestable-build-tool /usr/local/sbin
+COPY tee-compile /usr/local/sbin
 ENV HOME /workspace
 
-CMD ["bash", "-c", "attestable-build-tool worker -listen vsock://:12345 -dir /workspace"]
+CMD ["bash", "-c", "tee-compile worker -listen vsock://:12345 -dir /workspace"]

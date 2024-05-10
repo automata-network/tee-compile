@@ -87,6 +87,6 @@ ENV PKG_CONFIG_PATH='/opt/sgxsdk/pkgconfig'
 
 
 WORKDIR /workspace
-COPY attestable-build-tool /workspace
+COPY tee-compile /workspace
 
-CMD ["bash", "-c", "/workspace/attestable-build-tool worker -listen vsock://:12345 -dir /workspace"]
+CMD ["bash", "-c", "/workspace/tee-compile worker -listen vsock://:12345 -dir /workspace"]

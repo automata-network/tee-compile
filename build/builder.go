@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"os"
 
-	"github.com/automata-network/attestable-build-tool/misc"
+	"github.com/automata-network/tee-compile/misc"
 	"github.com/chzyer/logex"
 )
 

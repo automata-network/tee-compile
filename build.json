@@ -5,7 +5,7 @@
 	},
 	"output": {
 		"files": [
-			"attestable-build-tool"
+			"tee-compile"
 		]
 	}
 }

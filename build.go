@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/automata-network/attestable-build-tool/misc"
+	"github.com/automata-network/tee-compile/misc"
 	"github.com/chzyer/logex"
 	"github.com/hf/nitrite"
 	"github.com/mdlayher/vsock"
@@ -62,7 +62,7 @@ func (b *BuildToolBuild) FlaglyHandle() error {
 		if err := misc.Exec(nil, "docker", "run", "--rm",
 			"-v", fmt.Sprintf("%v:/tmp/vendor", vendorDir),
 			"-v", fmt.Sprintf("%v:/workspace/code", cwd),
-			b.Vendor, "/workspace/attestable-build-tool", "vendor", "-dir", "/workspace/code",
+			b.Vendor, "/workspace/tee-compile", "vendor", "-dir", "/workspace/code",
 		); err != nil {
 			return logex.Trace(err)
 		}

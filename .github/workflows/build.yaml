@@ -1,4 +1,4 @@
-name: Software Build Attestation
+name: Generate Attestable Build
 
 on:
   release:
@@ -13,8 +13,8 @@ jobs:
       uses: actions/checkout@v2
     - name: Build
       run: |
-        attestable-build-tool build -output attestable-build-tool.tar -nitro ~/ata-build-go-latest.eif
+        tee-compile build -output release.tar -nitro ~/ata-build-go-latest.eif
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
-        files: attestable-build-tool.tar
+        files: release.tar

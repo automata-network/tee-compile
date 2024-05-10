@@ -1,4 +1,4 @@
-# Attestable Build Tool
+# TEE Compile
 
 [![License](https://img.shields.io/badge/license-Apache-green.svg)](LICENSE)
 
@@ -43,7 +43,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Build
       run: |
-        attestable-build-tool build -output release.tar -nitro ~/ata-build-rust-latest.eif
+        tee-compile build -output release.tar -nitro ~/ata-build-rust-latest.eif
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
@@ -73,7 +73,7 @@ Create the `build.json` file in the project.
 
 ## See also
 
-* [Software Build Attestation](https://docs.ata.network/attestation-module/software-build-attestation)
+* [Software Build Attestation](https://docs.ata.network/tee-overview/tee-compile)
 * [Reproducible Build](https://docs.ata.network/research/reproducible-build)
 
 ## Contributing
