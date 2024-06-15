@@ -86,4 +86,4 @@ Create the `build.json` file in the project.
 
 ## License
 
-MIT
+Apache
