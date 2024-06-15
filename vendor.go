@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/automata-network/attestable-build-tool/build"
+	"github.com/automata-network/tee-compile/build"
 	"github.com/chzyer/logex"
 )
 

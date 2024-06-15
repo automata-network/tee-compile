@@ -1,4 +1,4 @@
-module github.com/automata-network/attestable-build-tool
+module github.com/automata-network/tee-compile
 
 go 1.18
 
